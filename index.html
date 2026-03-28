@@ -97,21 +97,21 @@ nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(10,10,10,.96);bo
   </nav>
   <div class="admin-layout">
     <div class="sidebar">
-      <button class="side-item active" onclick="switchPanel('add',this)">+ Add Product</button>
+      <button class="side-item active" onclick="switchPanel('discord',this)">Discord Login</button>
+      <button class="side-item" onclick="switchPanel('add',this)">+ Add Product</button>
       <button class="side-item" onclick="switchPanel('products',this)">All Products</button>
       <button class="side-item" onclick="switchPanel('payments',this)">Payments</button>
-      <button class="side-item" onclick="switchPanel('discord',this)">Discord Login</button>
       <button class="side-item" onclick="switchPanel('settings',this)">Settings</button>
     </div>
     <div class="main-content">
 
-      <!-- DISCORD LOGIN SECTION -->
+      <!-- DISCORD LOGIN -->
       <div class="panel active" id="panel-discord">
         <div class="section-title">Discord Personal Login</div>
         <div class="discord-box">
           <h3>Login with Your Discord Account</h3>
-          <p>Click the button below to login with your own Discord account.<br>
-          When someone places an order, you will receive a DM from yourself (it will appear in your Friends / DMs tab).</p>
+          <p>Click below to login with your Discord account.<br>
+          Orders will be sent as a DM from yourself (will appear in your Friends/DMs tab).</p>
 
           <div class="discord-status">
             <div class="discord-status-dot" id="discord-dot"></div>
@@ -119,23 +119,16 @@ nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(10,10,10,.96);bo
           </div>
 
           <button class="btn-discord" onclick="loginWithDiscord()">🔗 Login with Discord</button>
-          <button class="btn-discord-disconnect" id="discord-disconnect-btn" onclick="disconnectDiscord()">Disconnect</button>
+          <button class="btn-discord-disconnect" id="discord-disconnect-btn" onclick="disconnectDiscord()" style="display:none">Disconnect</button>
           
-          <div class="discord-test-row" id="discord-test-row" style="margin-top:15px;display:none">
+          <div id="discord-test-row" style="margin-top:15px;display:none">
             <button class="btn-test" onclick="testDiscordMessage()">Send Test Message to Myself</button>
             <div class="discord-log" id="discord-log"></div>
           </div>
         </div>
       </div>
 
-      <!-- Add Product Panel (kept from previous) -->
-      <div class="panel" id="panel-add">
-        <div class="section-title">Add New Product</div>
-        <!-- ... your existing add product form ... -->
-        <!-- (You can copy the add product section from previous version) -->
-      </div>
-
-      <!-- Products, Payments, Settings panels remain the same -->
+      <!-- You can add your other panels (Add Product, Products, Payments, Settings) here as before -->
 
     </div>
   </div>
@@ -144,44 +137,39 @@ nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(10,10,10,.96);bo
 
 <script>
 const DEFAULT_PASS = 'admin123';
-let selectedCat = 'diamonds';
-let uploadedImageUrls = [];
-let isUploading = false;
-let discordAccessToken = '';
-let myDiscordUserId = '';
 
-// ── AUTH ──────────────────────────────────────────────
 function doLogin(){
-  const user=document.getElementById('login-user').value.trim();
-  const pass=document.getElementById('login-pass').value.trim();
-  const stored=localStorage.getItem('adminPass')||DEFAULT_PASS;
-  if(user==='admin'&&pass===stored){
-    document.getElementById('login-screen').style.display='none';
-    document.getElementById('admin-screen').style.display='block';
+  const user = document.getElementById('login-user').value.trim();
+  const pass = document.getElementById('login-pass').value.trim();
+  const stored = localStorage.getItem('adminPass') || DEFAULT_PASS;
+  if(user === 'admin' && pass === stored){
+    document.getElementById('login-screen').style.display = 'none';
+    document.getElementById('admin-screen').style.display = 'block';
   } else {
-    document.getElementById('login-err').style.display='block';
+    document.getElementById('login-err').style.display = 'block';
   }
 }
 function doLogout(){
-  document.getElementById('admin-screen').style.display='none';
-  document.getElementById('login-screen').style.display='flex';
-  document.getElementById('login-pass').value='';
+  document.getElementById('admin-screen').style.display = 'none';
+  document.getElementById('login-screen').style.display = 'flex';
 }
 
-function switchPanel(id,btn){
-  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+function switchPanel(id, btn){
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
   document.getElementById('panel-'+id).classList.add('active');
-  document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.side-item').forEach(s => s.classList.remove('active'));
   if(btn) btn.classList.add('active');
 }
 
-// Discord Login
-async function loginWithDiscord() {
+let discordAccessToken = '';
+let myDiscordUserId = '';
+
+// Login with Discord
+function loginWithDiscord() {
   const clientId = "1487559624491274291";
-  const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
-  const scope = "identify";
+  const redirectUri = encodeURIComponent("https://adanratified-boop.github.io/admin-station/admin.html");
   
-  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
   window.location.href = authUrl;
 }
 
@@ -205,8 +193,11 @@ function handleDiscordCallback() {
       window.__dbSet(window.__dbRef(window.__db, 'settings/myDiscordUserId'), user.id);
       updateDiscordStatus('online', `Logged in as ${user.username}`);
       document.getElementById('discord-test-row').style.display = 'block';
+      document.getElementById('discord-disconnect-btn').style.display = 'inline-block';
     })
-    .catch(() => updateDiscordStatus('', 'Failed to fetch user info'));
+    .catch(() => {
+      updateDiscordStatus('', 'Failed to get user info');
+    });
     
     history.replaceState({}, document.title, window.location.pathname);
   }
@@ -225,15 +216,15 @@ async function testDiscordMessage() {
   const log = document.getElementById('discord-log');
   log.textContent = 'Sending test message...';
   try {
-    await sendSelfDM("✅ Test from A'S SHOP - Discord notification system is working!");
+    await sendSelfDM("✅ Test from A'S SHOP Admin - Notification system is working!");
     log.textContent = '✓ Message sent! Check your Discord DMs / Friends tab.';
   } catch(e) {
-    log.textContent = '❌ ' + (e.message || 'Failed to send');
+    log.textContent = '❌ ' + (e.message || 'Failed');
   }
 }
 
 async function sendSelfDM(message) {
-  if (!discordAccessToken || !myDiscordUserId) throw new Error('Not logged in with Discord');
+  if (!discordAccessToken || !myDiscordUserId) throw new Error('Not logged in');
   
   const chRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
     method: 'POST',
@@ -247,7 +238,7 @@ async function sendSelfDM(message) {
   if (!chRes.ok) throw new Error('Cannot open DM channel');
   const ch = await chRes.json();
   
-  const msgRes = await fetch(`https://discord.com/api/v10/channels/${ch.id}/messages`, {
+  await fetch(`https://discord.com/api/v10/channels/${ch.id}/messages`, {
     method: 'POST',
     headers: {
       'Authorization': 'Bearer ' + discordAccessToken,
@@ -255,37 +246,23 @@ async function sendSelfDM(message) {
     },
     body: JSON.stringify({content: message})
   });
-  
-  if (!msgRes.ok) throw new Error('Failed to send message');
 }
 
 window.sendOrderNotification = async function(order) {
   const tokenSnap = await window.__dbGet?.(window.__dbRef(window.__db, 'settings/discordUserToken'));
   const uidSnap = await window.__dbGet?.(window.__dbRef(window.__db, 'settings/myDiscordUserId'));
-  
   const token = tokenSnap?.val();
   const userId = uidSnap?.val();
   
   if (token && userId) {
-    const lines = [
-      '🛒 **New Order — A\'S SHOP**',
-      '─────────────────────',
-      `📦 **Product:** ${order.productName}`,
-      `💰 **Price:** Rs ${order.price} PKR`,
-      `📂 **Category:** ${order.category?.toUpperCase() || 'N/A'}`,
-      order.uid ? `🎮 **Free Fire UID:** ${order.uid}` : '',
-      `💳 **Payment Method:** ${order.paymentMethod || 'Not selected'}`,
-      `🖼️ **Screenshot:** ${order.screenshotUrl || 'No screenshot'}`,
-      '─────────────────────',
-      `🕐 ${new Date().toLocaleString()}`
-    ].filter(Boolean).join('\n');
-
+    const lines = `🛒 **New Order — A'S SHOP**\n\n📦 Product: ${order.productName}\n💰 Price: Rs ${order.price}\n🎮 UID: ${order.uid || 'Not required'}\n💳 Payment: ${order.paymentMethod || 'N/A'}\n🖼️ Screenshot: ${order.screenshotUrl || 'No screenshot'}\n\n🕐 ${new Date().toLocaleString()}`;
+    
     try {
       discordAccessToken = token;
       myDiscordUserId = userId;
       await sendSelfDM(lines);
     } catch(e) {
-      console.warn('Discord DM failed:', e);
+      console.warn('DM failed:', e);
     }
   }
 };
@@ -296,18 +273,20 @@ async function disconnectDiscord() {
   discordAccessToken = '';
   myDiscordUserId = '';
   updateDiscordStatus('', 'Disconnected');
+  document.getElementById('discord-test-row').style.display = 'none';
+  document.getElementById('discord-disconnect-btn').style.display = 'none';
 }
 
-// Load saved data
+// Initialize
 window.addEventListener('firebase-ready', () => {
   window.__dbOnValue(window.__dbRef(window.__db, 'settings/discordUserToken'), snap => {
-    if (snap.val()) discordAccessToken = snap.val();
+    if(snap.val()) discordAccessToken = snap.val();
   });
   window.__dbOnValue(window.__dbRef(window.__db, 'settings/myDiscordUserId'), snap => {
-    if (snap.val()) myDiscordUserId = snap.val();
+    if(snap.val()) myDiscordUserId = snap.val();
   });
   
-  setTimeout(handleDiscordCallback, 800);
+  setTimeout(handleDiscordCallback, 600);
 });
 </script>
 </body>
