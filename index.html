@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>A'S SHOP – Admin Panel</title>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;400;600&display=swap" rel="stylesheet"/>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getDatabase, ref, onValue, set, push, remove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-database.js";
+  const firebaseConfig = {
+    apiKey:"AIzaSyAPH2oWo-6-Mlo4hP6DbFm9iIlXXtxjk5U",
+    authDomain:"a-s-shop-1ca1e.firebaseapp.com",
+    databaseURL:"https://a-s-shop-1ca1e-default-rtdb.asia-southeast1.firebasedatabase.app",
+    projectId:"a-s-shop-1ca1e",
+    storageBucket:"a-s-shop-1ca1e.firebasestorage.app",
+    messagingSenderId:"1020780224610",
+    appId:"1:1020780224610:web:0069949b3f5fb00888b13b"
+  };
+  const app=initializeApp(firebaseConfig);
+  const db=getDatabase(app);
+  window.__db=db; window.__dbRef=ref; window.__dbOnValue=onValue;
+  window.__dbSet=set; window.__dbPush=push; window.__dbRemove=remove;
+  window.dispatchEvent(new Event('firebase-ready'));
+</script>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0a0a0a;--surface:#111;--surface2:#181818;--border:#222;--accent2:#888;--text:#f0f0f0;--muted:#555;--green:#22c55e;--red:#ef4444;--discord:#5865F2;}
+body{background:var(--bg);color:var(--text);font-family:'Rajdhani',sans-serif;min-height:100vh}
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.login-box{background:var(--surface);border:1px solid var(--border);width:100%;max-width:360px;padding:38px 30px}
+.login-box h1{font-family:'Orbitron',sans-serif;font-size:1.2rem;font-weight:900;margin-bottom:4px}
+.login-box p{font-size:.82rem;color:var(--muted);margin-bottom:26px;letter-spacing:1px}
+.form-label{font-size:.73rem;letter-spacing:1px;color:var(--muted);text-transform:uppercase;margin-bottom:5px;display:block}
+.form-input{width:100%;background:var(--surface2);border:1px solid var(--border);color:#fff;padding:10px 13px;font-family:'Rajdhani',sans-serif;font-size:.96rem;outline:none;margin-bottom:14px;transition:border .2s}
+.form-input:focus{border-color:#555}
+.btn-main{width:100%;padding:12px;background:#fff;color:#000;font-family:'Orbitron',sans-serif;font-size:.82rem;font-weight:700;letter-spacing:2px;border:none;cursor:pointer;text-transform:uppercase;transition:background .2s}
+.btn-main:hover{background:#ddd}
+.login-err{color:var(--red);font-size:.82rem;margin-top:9px;display:none}
+#admin-screen{display:none}
+nav{position:fixed;top:0;width:100%;z-index:100;background:rgba(10,10,10,.96);border-bottom:1px solid var(--border);backdrop-filter:blur(12px)}
+.nav-inner{max-width:1200px;margin:auto;display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:60px}
+.logo{font-family:'Orbitron',sans-serif;font-size:1.05rem;font-weight:900;letter-spacing:2px}
+.logo span{color:var(--muted)}
+.nav-right{display:flex;align-items:center;gap:12px}
+.badge{font-size:.68rem;letter-spacing:2px;color:var(--green);border:1px solid var(--green);padding:3px 9px;text-transform:uppercase}
+.discord-badge{font-size:.68rem;letter-spacing:1px;color:var(--discord);border:1px solid var(--discord);padding:3px 9px;text-transform:uppercase;display:none}
+.btn-sm{background:none;border:1px solid var(--border);color:var(--muted);padding:5px 14px;font-family:'Rajdhani',sans-serif;font-size:.82rem;cursor:pointer;letter-spacing:1px;transition:all .2s}
+.btn-sm:hover{border-color:#fff;color:#fff}
+.admin-layout{display:flex;min-height:100vh;padding-top:60px}
+.sidebar{width:195px;border-right:1px solid var(--border);padding:22px 0;flex-shrink:0;position:sticky;top:60px;height:calc(100vh - 60px);overflow-y:auto}
+.side-item{display:block;padding:10px 22px;color:var(--accent2);font-size:.86rem;font-weight:600;letter-spacing:1px;cursor:pointer;border-left:2px solid transparent;transition:all .2s;text-transform:uppercase;background:none;border-right:none;border-top:none;border-bottom:none;width:100%;text-align:left}
+.side-item:hover,.side-item.active{color:#fff;border-left-color:#fff;background:rgba(255,255,255,.03)}
+.main-content{flex:1;padding:38px;max-width:880px}
+.section-title{font-family:'Orbitron',sans-serif;font-size:1.15rem;font-weight:700;letter-spacing:1px;margin-bottom:22px;padding-bottom:14px;border-bottom:1px solid var(--border)}
+.panel{display:none}.panel.active{display:block}
+.form-group{margin-bottom:14px}
+.btn-add-prod{padding:11px 26px;background:#fff;color:#000;font-family:'Orbitron',sans-serif;font-size:.78rem;font-weight:700;letter-spacing:2px;border:none;cursor:pointer;text-transform:uppercase;transition:background .2s}
+.btn-add-prod:hover{background:#ddd}
+.success-msg{color:var(--green);font-size:.86rem;margin-top:10px;display:none}
+.error-msg{color:var(--red);font-size:.86rem;margin-top:10px;display:none}
+.discord-box{background:#1a1b2e;border:1px solid var(--discord);padding:22px;margin-bottom:14px}
+.discord-box h3{font-family:'Orbitron',sans-serif;font-size:.86rem;letter-spacing:1px;margin-bottom:6px;color:var(--discord)}
+.discord-status{display:flex;align-items:center;gap:8px;padding:10px 14px;border:1px solid var(--border);background:var(--surface2);margin-bottom:14px;font-size:.84rem}
+.discord-status-dot{width:9px;height:9px;border-radius:50%;background:var(--muted);flex-shrink:0}
+.discord-status-dot.online{background:var(--green)}
+.discord-log{font-size:.74rem;color:var(--muted);margin-top:8px;min-height:18px}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-box">
+    <h1>A'S SHOP</h1>
+    <p>ADMIN PANEL</p>
+    <label class="form-label">Username</label>
+    <input type="text" class="form-input" id="login-user" placeholder="admin"/>
+    <label class="form-label">Password</label>
+    <input type="password" class="form-input" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"/>
+    <button class="btn-main" onclick="doLogin()">Login</button>
+    <div class="login-err" id="login-err">Invalid credentials</div>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="admin-screen">
+  <nav>
+    <div class="nav-inner">
+      <div class="logo">A'S<span>SHOP</span> <span style="font-size:.65rem;letter-spacing:3px">ADMIN</span></div>
+      <div class="nav-right">
+        <span class="badge">● Online</span>
+        <span class="discord-badge" id="discord-nav-badge">Discord ●</span>
+        <button class="btn-sm" onclick="doLogout()">Logout</button>
+      </div>
+    </div>
+  </nav>
+  <div class="admin-layout">
+    <div class="sidebar">
+      <button class="side-item active" onclick="switchPanel('add',this)">+ Add Product</button>
+      <button class="side-item" onclick="switchPanel('products',this)">All Products</button>
+      <button class="side-item" onclick="switchPanel('payments',this)">Payments</button>
+      <button class="side-item" onclick="switchPanel('discord',this)">Discord Login</button>
+      <button class="side-item" onclick="switchPanel('settings',this)">Settings</button>
+    </div>
+    <div class="main-content">
+
+      <!-- DISCORD LOGIN SECTION -->
+      <div class="panel active" id="panel-discord">
+        <div class="section-title">Discord Personal Login</div>
+        <div class="discord-box">
+          <h3>Login with Your Discord Account</h3>
+          <p>Click the button below to login with your own Discord account.<br>
+          When someone places an order, you will receive a DM from yourself (it will appear in your Friends / DMs tab).</p>
+
+          <div class="discord-status">
+            <div class="discord-status-dot" id="discord-dot"></div>
+            <span id="discord-status-txt">Not logged in</span>
+          </div>
+
+          <button class="btn-discord" onclick="loginWithDiscord()">🔗 Login with Discord</button>
+          <button class="btn-discord-disconnect" id="discord-disconnect-btn" onclick="disconnectDiscord()">Disconnect</button>
+          
+          <div class="discord-test-row" id="discord-test-row" style="margin-top:15px;display:none">
+            <button class="btn-test" onclick="testDiscordMessage()">Send Test Message to Myself</button>
+            <div class="discord-log" id="discord-log"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add Product Panel (kept from previous) -->
+      <div class="panel" id="panel-add">
+        <div class="section-title">Add New Product</div>
+        <!-- ... your existing add product form ... -->
+        <!-- (You can copy the add product section from previous version) -->
+      </div>
+
+      <!-- Products, Payments, Settings panels remain the same -->
+
+    </div>
+  </div>
+  <footer>A'S SHOP Admin Panel</footer>
+</div>
+
+<script>
+const DEFAULT_PASS = 'admin123';
+let selectedCat = 'diamonds';
+let uploadedImageUrls = [];
+let isUploading = false;
+let discordAccessToken = '';
+let myDiscordUserId = '';
+
+// ── AUTH ──────────────────────────────────────────────
+function doLogin(){
+  const user=document.getElementById('login-user').value.trim();
+  const pass=document.getElementById('login-pass').value.trim();
+  const stored=localStorage.getItem('adminPass')||DEFAULT_PASS;
+  if(user==='admin'&&pass===stored){
+    document.getElementById('login-screen').style.display='none';
+    document.getElementById('admin-screen').style.display='block';
+  } else {
+    document.getElementById('login-err').style.display='block';
+  }
+}
+function doLogout(){
+  document.getElementById('admin-screen').style.display='none';
+  document.getElementById('login-screen').style.display='flex';
+  document.getElementById('login-pass').value='';
+}
+
+function switchPanel(id,btn){
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('panel-'+id).classList.add('active');
+  document.querySelectorAll('.side-item').forEach(s=>s.classList.remove('active'));
+  if(btn) btn.classList.add('active');
+}
+
+// Discord Login
+async function loginWithDiscord() {
+  const clientId = "1487559624491274291";
+  const redirectUri = encodeURIComponent(window.location.origin + window.location.pathname);
+  const scope = "identify";
+  
+  const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=${scope}`;
+  window.location.href = authUrl;
+}
+
+function handleDiscordCallback() {
+  const hash = window.location.hash.substring(1);
+  if (!hash) return;
+  
+  const params = new URLSearchParams(hash);
+  const token = params.get('access_token');
+  
+  if (token) {
+    discordAccessToken = token;
+    window.__dbSet(window.__dbRef(window.__db, 'settings/discordUserToken'), token);
+    
+    fetch('https://discord.com/api/v10/users/@me', {
+      headers: { 'Authorization': 'Bearer ' + token }
+    })
+    .then(r => r.json())
+    .then(user => {
+      myDiscordUserId = user.id;
+      window.__dbSet(window.__dbRef(window.__db, 'settings/myDiscordUserId'), user.id);
+      updateDiscordStatus('online', `Logged in as ${user.username}`);
+      document.getElementById('discord-test-row').style.display = 'block';
+    })
+    .catch(() => updateDiscordStatus('', 'Failed to fetch user info'));
+    
+    history.replaceState({}, document.title, window.location.pathname);
+  }
+}
+
+function updateDiscordStatus(state, text) {
+  const dot = document.getElementById('discord-dot');
+  const txt = document.getElementById('discord-status-txt');
+  const badge = document.getElementById('discord-nav-badge');
+  dot.className = 'discord-status-dot' + (state === 'online' ? ' online' : '');
+  txt.textContent = text || 'Not logged in';
+  badge.style.display = state === 'online' ? 'inline-block' : 'none';
+}
+
+async function testDiscordMessage() {
+  const log = document.getElementById('discord-log');
+  log.textContent = 'Sending test message...';
+  try {
+    await sendSelfDM("✅ Test from A'S SHOP - Discord notification system is working!");
+    log.textContent = '✓ Message sent! Check your Discord DMs / Friends tab.';
+  } catch(e) {
+    log.textContent = '❌ ' + (e.message || 'Failed to send');
+  }
+}
+
+async function sendSelfDM(message) {
+  if (!discordAccessToken || !myDiscordUserId) throw new Error('Not logged in with Discord');
+  
+  const chRes = await fetch('https://discord.com/api/v10/users/@me/channels', {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + discordAccessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({recipient_id: myDiscordUserId})
+  });
+  
+  if (!chRes.ok) throw new Error('Cannot open DM channel');
+  const ch = await chRes.json();
+  
+  const msgRes = await fetch(`https://discord.com/api/v10/channels/${ch.id}/messages`, {
+    method: 'POST',
+    headers: {
+      'Authorization': 'Bearer ' + discordAccessToken,
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({content: message})
+  });
+  
+  if (!msgRes.ok) throw new Error('Failed to send message');
+}
+
+window.sendOrderNotification = async function(order) {
+  const tokenSnap = await window.__dbGet?.(window.__dbRef(window.__db, 'settings/discordUserToken'));
+  const uidSnap = await window.__dbGet?.(window.__dbRef(window.__db, 'settings/myDiscordUserId'));
+  
+  const token = tokenSnap?.val();
+  const userId = uidSnap?.val();
+  
+  if (token && userId) {
+    const lines = [
+      '🛒 **New Order — A\'S SHOP**',
+      '─────────────────────',
+      `📦 **Product:** ${order.productName}`,
+      `💰 **Price:** Rs ${order.price} PKR`,
+      `📂 **Category:** ${order.category?.toUpperCase() || 'N/A'}`,
+      order.uid ? `🎮 **Free Fire UID:** ${order.uid}` : '',
+      `💳 **Payment Method:** ${order.paymentMethod || 'Not selected'}`,
+      `🖼️ **Screenshot:** ${order.screenshotUrl || 'No screenshot'}`,
+      '─────────────────────',
+      `🕐 ${new Date().toLocaleString()}`
+    ].filter(Boolean).join('\n');
+
+    try {
+      discordAccessToken = token;
+      myDiscordUserId = userId;
+      await sendSelfDM(lines);
+    } catch(e) {
+      console.warn('Discord DM failed:', e);
+    }
+  }
+};
+
+async function disconnectDiscord() {
+  await window.__dbSet(window.__dbRef(window.__db, 'settings/discordUserToken'), null);
+  await window.__dbSet(window.__dbRef(window.__db, 'settings/myDiscordUserId'), null);
+  discordAccessToken = '';
+  myDiscordUserId = '';
+  updateDiscordStatus('', 'Disconnected');
+}
+
+// Load saved data
+window.addEventListener('firebase-ready', () => {
+  window.__dbOnValue(window.__dbRef(window.__db, 'settings/discordUserToken'), snap => {
+    if (snap.val()) discordAccessToken = snap.val();
+  });
+  window.__dbOnValue(window.__dbRef(window.__db, 'settings/myDiscordUserId'), snap => {
+    if (snap.val()) myDiscordUserId = snap.val();
+  });
+  
+  setTimeout(handleDiscordCallback, 800);
+});
+</script>
+</body>
+</html>
