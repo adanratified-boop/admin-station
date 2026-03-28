@@ -167,7 +167,7 @@ let myDiscordUserId = '';
 // Login with Discord
 function loginWithDiscord() {
   const clientId = "1487559624491274291";
-  const redirectUri = encodeURIComponent("https://adanratified-boop.github.io/admin-station/callback");
+  const redirectUri = encodeURIComponent("https://adanratified-boop.github.io/admin-station/");
   
   const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=token&scope=identify`;
   window.location.href = authUrl;
